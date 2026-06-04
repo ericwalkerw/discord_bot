@@ -1,0 +1,19 @@
+#node_modules
+node_modules/
+#dist
+dist/
+#build
+build/
+#logs
+logs/
+#env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+#coverage
+coverage/
+#npm-debug.log
+npm-debug.log*
+package-lock.json
