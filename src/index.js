@@ -3,7 +3,7 @@ import MainController from "./MainController.js";
 import Emitter from "./Common/Emitter.js";
 import Brain from "./Brain.js";
 import Speech from "./Speech.js";
-const ver = "0.0.1";
+const ver = "0.0.2";
 class AIAgent {
     constructor() {
         this.onLoad();

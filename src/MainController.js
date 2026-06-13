@@ -54,11 +54,14 @@ export default class MainController {
     }
 
     initEvents() {
-        this.client.once("ready", () => {
+        const onClientReady = () => {
             console.log("================================");
             console.log(`🤖 ${this.client.user.tag} -> đã Online!`);
             console.log("================================");
-        });
+        };
+
+        this.client.once("ready", onClientReady);
+        this.client.once("clientReady", onClientReady);
 
         this.client.on('messageCreate', async (message) => {
             await this.handleMessage(message);
@@ -74,8 +77,11 @@ export default class MainController {
             return;
         }
 
+        // Debug: inspect incoming message and mention state
+        console.debug(`[messageCreate] from=${data.author.tag} id=${data.author.id} mentionsBot=${data.mentions.users.has(this.client.user.id)} content=${data.content}`);
+
         // Kiểm tra xem bot có được tag không
-        if (data.mentions.has(this.client.user)) {
+        if (data.mentions.users.has(this.client.user.id)) {
             const mes = data.content.replace(/<@!?\d+>/g, '').trim();
             if (!mes) {
                 return data.reply("Muốn hỏi dè hỏi đê");
@@ -84,9 +90,13 @@ export default class MainController {
             try {
                 await Speech.instance.showTyping(data);
                 const aiResponse = await Brain.instance.onSendRequest(mes);
+                if (typeof aiResponse !== 'string' || !aiResponse.trim()) {
+                    return data.reply('Đã nhận được yêu cầu, nhưng không có nội dung trả lời từ AI.');
+                }
                 await Speech.instance.sendReply(data, aiResponse);
 
             } catch (error) {
+                console.error('Error handling user message:', error);
                 await data.reply("❌ Ẹc!! lỗi rùi :)))");
             }
         }
