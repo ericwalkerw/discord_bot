@@ -20,9 +20,21 @@ export default class MainController {
 
     onLoad() {
         this.initDiscord();
+        this.validateEnv();
         this.initEvents();
         this.onLoginDiscord();
         this.initModel();
+    }
+
+    validateEnv() {
+        if (!this.discordToken) {
+            console.error('Missing DISCORD_TOKEN in environment. Exiting.');
+            process.exit(1);
+        }
+        if (!this.geminiApiKey) {
+            console.error('Missing GEMINI_API_KEY in environment. Exiting.');
+            process.exit(1);
+        }
     }
 
     initDiscord() {
@@ -37,12 +49,12 @@ export default class MainController {
 
     initModel() {
         const model = "gemini-3.5-flash";
-        const ai = new GoogleGenAI({});
+        const ai = new GoogleGenAI({ apiKey: this.geminiApiKey });
         Brain.instance.initModel(ai, model)
     }
 
     initEvents() {
-        this.client.once("clientReady", () => {
+        this.client.once("ready", () => {
             console.log("================================");
             console.log(`🤖 ${this.client.user.tag} -> đã Online!`);
             console.log("================================");
@@ -55,6 +67,12 @@ export default class MainController {
 
     async handleMessage(data) {
         if (data.author.bot) return;
+
+        // Guard in case the client isn't fully ready yet
+        if (!this.client || !this.client.user) {
+            console.warn('Received message before client ready; ignoring.');
+            return;
+        }
 
         // Kiểm tra xem bot có được tag không
         if (data.mentions.has(this.client.user)) {
@@ -75,6 +93,9 @@ export default class MainController {
     }
 
     onLoginDiscord() {
-        this.client.login(this.discordToken);
+        this.client.login(this.discordToken).catch(err => {
+            console.error('Discord login failed:', err);
+            process.exit(1);
+        });
     }
 }
