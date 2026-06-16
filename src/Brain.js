@@ -5,6 +5,7 @@ export default class Brain {
     constructor() {
         console.log("BRAIN STARTED");
         Brain.instance = this;
+        this.sessions = new Map();
     }
 
     initModel(client, model) {
@@ -12,20 +13,31 @@ export default class Brain {
         this.model = model;
     }
 
-    async onSendRequest(prompt) {
+    getChatSession(sessionId) {
+        if (!this.sessions.has(sessionId)) {
+            const chat = this.client.chats.create({
+                model: this.model,
+            });
+            this.sessions.set(sessionId, chat);
+        }
+        return this.sessions.get(sessionId);
+    }
+
+    resetSession(sessionId) {
+        this.sessions.delete(sessionId);
+    }
+
+    async onSendRequest(prompt, sessionId = 'default') {
         const mes = prompt.replace(/^<@!?\d+>\s*/, "");
         const maxAttempts = 3;
         let attempt = 0;
         let lastError = null;
+        const chatSession = this.getChatSession(sessionId);
 
         while (attempt < maxAttempts) {
             try {
-                const response = await this.client.models.generateContent({
-                    model: this.model,
-                    contents: mes
-                });
+                const response = await chatSession.sendMessage({ message: mes });
 
-                // Attempt to extract text from known response shapes
                 if (!response) return '';
                 if (typeof response.text === 'string' && response.text.trim().length) return response.text;
                 if (response.output && typeof response.output.text === 'string') return response.output.text;

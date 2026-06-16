@@ -82,19 +82,24 @@ export default class MainController {
 
         // Kiểm tra xem bot có được tag không
         if (data.mentions.users.has(this.client.user.id)) {
-            const mes = data.content.replace(/<@!?\d+>/g, '').trim();
-            if (!mes) {
-                return data.reply("Muốn hỏi dè hỏi đê");
-            }
-
-            try {
-                await Speech.instance.showTyping(data);
-                const aiResponse = await Brain.instance.onSendRequest(mes);
-                if (typeof aiResponse !== 'string' || !aiResponse.trim()) {
-                    return data.reply('Đã nhận được yêu cầu, nhưng không có nội dung trả lời từ AI.');
+                const sessionId = data.channel.id;
+                const mes = data.content.replace(/<@!?\d+>/g, '').trim();
+                if (!mes) {
+                    return data.reply("Muốn hỏi dè hỏi đê");
                 }
-                await Speech.instance.sendReply(data, aiResponse);
 
+                if (/^(reset|quên|bắt đầu lại|làm lại|start over)$/i.test(mes)) {
+                    Brain.instance.resetSession(sessionId);
+                    return data.reply("✅ Đã xóa ngữ cảnh hiện tại. Bắt đầu lại thôi!");
+                }
+
+                try {
+                    await Speech.instance.showTyping(data);
+                    const aiResponse = await Brain.instance.onSendRequest(mes, sessionId);
+                    if (typeof aiResponse !== 'string' || !aiResponse.trim()) {
+                        return data.reply('Đã nhận được yêu cầu, nhưng không có nội dung trả lời từ AI.');
+                    }
+                    await Speech.instance.sendReply(data, aiResponse);
             } catch (error) {
                 console.error('Error handling user message:', error);
                 await data.reply("❌ Ẹc!! lỗi rùi :)))");
