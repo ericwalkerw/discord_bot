@@ -60,7 +60,6 @@ export default class MainController {
             console.log("================================");
         };
 
-        this.client.once("ready", onClientReady);
         this.client.once("clientReady", onClientReady);
 
         this.client.on('messageCreate', async (message) => {
